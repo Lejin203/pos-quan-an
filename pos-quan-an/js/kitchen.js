@@ -1,43 +1,35 @@
-function draw(){
+const API = "https://pos-quan-an.onrender.com"  // Thay bằng URL Render của bạn
 
-let orders=Storage.getKitchen()
-
-let div=document.getElementById("orders")
-
-div.innerHTML=""
-
-orders.forEach((o,i)=>{
-
-let d=document.createElement("div")
-
-let html="<h3>Bàn "+o.table+"</h3>"
-
-o.foods.forEach(f=>{
-html+=f.name+"<br>"
-})
-
-html+="<button onclick='done("+i+")'>Xong</button>"
-
-d.innerHTML=html
-
-div.appendChild(d)
-
-})
-
+function loadKitchen() {
+    fetch(API + "/orders")
+        .then(r => r.json())
+        .then(data => {
+            let div = document.getElementById("orders");
+            div.innerHTML = "";
+            data.forEach(o => {
+                let html = "<div>";
+                html += "<h3>Bàn " + o.table + "</h3>";
+                html += "<small>" + o.time + "</small><br>";
+                o.foods.forEach(f => {
+                    html += f.name + " x" + f.qty + "<br>";
+                });
+                html += `<button onclick="doneOrder(${o.id})">✅ Xong</button>`;
+                html += "</div>";
+                div.innerHTML += html;
+            });
+        });
 }
 
-function done(i){
-
-let orders=Storage.getKitchen()
-
-orders.splice(i,1)
-
-Storage.saveKitchen(orders)
-
-draw()
-
+function doneOrder(id) {
+    fetch(API + "/done", {
+        method: "POST",
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ id })
+    }).then(() => {
+        loadKitchen(); // reload ngay sau khi xóa
+    });
 }
 
-draw()
-
-setInterval(draw,2000)
+// Real-time cập nhật mỗi 2 giây
+setInterval(loadKitchen, 2000);
+loadKitchen();

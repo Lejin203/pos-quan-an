@@ -1,240 +1,106 @@
-let tables = Storage.getTables()
-let menu = Storage.getMenu()
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Gọi món</title>
+<link rel="stylesheet" href="css/style.css">
 
-let currentTable = null
-let currentCategory = null
+<style>
 
-const API = "https://pos-quan-an.onrender.com"
-
-/* =========================
-   DANH MỤC
-========================= */
-
-function drawCategories(){
-
-let div = document.getElementById("categories")
-div.innerHTML = ""
-
-let cats = [...new Set(menu.map(m => m.cat))]
-
-cats.forEach(cat=>{
-
-let b = document.createElement("div")
-b.className = "category-btn"
-
-if(cat === currentCategory) b.classList.add("active")
-
-b.innerText = cat
-
-b.onclick = () => {
-
-currentCategory = cat
-drawCategories()
-drawMenu()
-
+.section-header{
+background:#34495e;
+color:white;
+padding:10px;
+border-radius:8px;
+cursor:pointer;
+margin-top:10px;
 }
 
-div.appendChild(b)
-
-})
-
+.section-content{
+margin-top:10px;
 }
 
-/* =========================
-   MENU
-========================= */
-
-function drawMenu(){
-
-let div = document.getElementById("menu")
-div.innerHTML = ""
-
-let key = document.getElementById("search").value.toLowerCase()
-
-let list = []
-
-if(key){
-
-list = menu.filter(m =>
-m.name.toLowerCase().includes(key)
-)
-
-document.getElementById("categories").style.display="none"
-
-}else{
-
-document.getElementById("categories").style.display="flex"
-
-list = menu.filter(m =>
-!currentCategory || m.cat === currentCategory
-)
-
+.hidden{
+display:none;
 }
 
-list.forEach(m => {
+</style>
 
-let b = document.createElement("button")
+</head>
 
-b.innerHTML = m.name + "<br>" + m.price + "đ"
+<body>
 
-b.onclick = () => addFood(m)
+<h2>Trang gọi món</h2>
 
-div.appendChild(b)
+<h3 id="currentTable">Chưa chọn bàn</h3>
 
-})
+<a href="menu.html">Quản lý menu</a> |
+<a href="kitchen.html">Bếp</a> |
+<a href="history.html">Lịch sử</a>
 
-}
+<hr>
 
-/* =========================
-   BÀN
-========================= */
+<!-- CHỌN BÀN -->
 
-function drawTables(){
-
-let div = document.getElementById("tables")
-div.innerHTML = ""
-
-for(let i=1;i<=20;i++){
-
-let b = document.createElement("button")
-
-b.innerText = "Bàn " + i
-
-if(currentTable === i){
-b.style.background = "#27ae60"
-b.style.color = "white"
-}
-
-b.onclick = () => openTable(i)
-
-div.appendChild(b)
-
-}
-
-}
-
-/* =========================
-   CHỌN BÀN
-========================= */
-
-function openTable(n){
-
-currentTable = n
-
-if(!tables[n]) tables[n] = []
-
-document.getElementById("currentTable").innerHTML =
-"Đang phục vụ: <b>Bàn " + n + "</b>"
-
-drawBill()
-drawTables()
-
-}
-
-/* =========================
-   THÊM MÓN
-========================= */
-
-function addFood(food){
-
-if(currentTable === null){
-alert("Vui lòng chọn bàn trước")
-return
-}
-
-tables[currentTable].push(food)
-
-Storage.saveTables(tables)
-
-drawBill()
-
-}
-
-/* =========================
-   HÓA ĐƠN
-========================= */
-
-function drawBill(){
-
-if(currentTable === null){
-document.getElementById("bill").innerHTML = "Chưa chọn bàn"
-return
-}
-
-let table = tables[currentTable]
-
-let html = ""
-let total = 0
-
-table.forEach((f,i)=>{
-
-total += f.price
-
-html += `
-<div>
-${f.name} - ${f.price}đ
-<button onclick="removeFood(${i})">❌</button>
+<div class="section-header" onclick="toggleTables()">
+Chọn bàn ▼
 </div>
-`
 
-})
+<div id="tablesSection" class="section-content">
+<div id="tables"></div>
+</div>
 
-html += "<hr><b>Tổng: " + total + "đ</b>"
+<!-- MENU -->
 
-document.getElementById("bill").innerHTML = html
+<div class="section-header" onclick="toggleMenu()">
+Menu ▼
+</div>
 
-}
+<div id="menuSection" class="section-content">
 
-/* =========================
-   XÓA MÓN
-========================= */
+<input id="search" placeholder="Tìm món">
 
-function removeFood(i){
+<div id="categories"></div>
 
-tables[currentTable].splice(i,1)
+<div id="menu"></div>
 
-Storage.saveTables(tables)
+</div>
 
-drawBill()
+<h3>Hóa đơn</h3>
 
-}
+<div id="bill"></div>
 
-/* =========================
-   GỬI BẾP (SERVER)
-========================= */
+<button id="sendKitchenBtn" onclick="sendKitchen()">
+Gửi bếp
+</button>
 
-function sendKitchen(){
+<script src="js/data.js"></script>
+<script src="js/order.js"></script>
 
-if(currentTable === null){
-alert("Chưa chọn bàn")
-return
-}
+<script>
 
-let order = {
-table: currentTable,
-foods: tables[currentTable]
-}
+/* BẬT TẮT CHỌN BÀN */
 
-fetch(API + "/send",{
-method:"POST",
-headers:{'Content-Type':'application/json'},
-body:JSON.stringify(order)
-})
+function toggleTables(){
 
-alert("Đã gửi bếp")
+let div = document.getElementById("tablesSection")
 
-tables[currentTable] = []
-
-Storage.saveTables(tables)
-
-drawBill()
+div.classList.toggle("hidden")
 
 }
 
-/* ========================= */
+/* BẬT TẮT MENU */
 
-document.getElementById("search").oninput = drawMenu
+function toggleMenu(){
 
-drawTables()
-drawCategories()
-drawMenu()
+let div = document.getElementById("menuSection")
+
+div.classList.toggle("hidden")
+
+}
+
+</script>
+
+</body>
+</html>
