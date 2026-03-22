@@ -1,106 +1,240 @@
-<!DOCTYPE html>
-<html>
-<head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Gọi món</title>
-<link rel="stylesheet" href="css/style.css">
+let tables = Storage.getTables()
+let menu = Storage.getMenu()
 
-<style>
+let currentTable = null
+let currentCategory = null
 
-.section-header{
-background:#34495e;
-color:white;
-padding:10px;
-border-radius:8px;
-cursor:pointer;
-margin-top:10px;
+const API = "https://pos-quan-an.onrender.com"
+
+/* =========================
+   DANH MỤC
+========================= */
+
+function drawCategories(){
+
+let div = document.getElementById("categories")
+div.innerHTML = ""
+
+let cats = [...new Set(menu.map(m => m.cat))]
+
+cats.forEach(cat=>{
+
+let b = document.createElement("div")
+b.className = "category-btn"
+
+if(cat === currentCategory) b.classList.add("active")
+
+b.innerText = cat
+
+b.onclick = () => {
+
+currentCategory = cat
+drawCategories()
+drawMenu()
+
 }
 
-.section-content{
-margin-top:10px;
+div.appendChild(b)
+
+})
+
 }
 
-.hidden{
-display:none;
+/* =========================
+   MENU
+========================= */
+
+function drawMenu(){
+
+let div = document.getElementById("menu")
+div.innerHTML = ""
+
+let key = document.getElementById("search").value.toLowerCase()
+
+let list = []
+
+if(key){
+
+list = menu.filter(m =>
+m.name.toLowerCase().includes(key)
+)
+
+document.getElementById("categories").style.display="none"
+
+}else{
+
+document.getElementById("categories").style.display="flex"
+
+list = menu.filter(m =>
+!currentCategory || m.cat === currentCategory
+)
+
 }
 
-</style>
+list.forEach(m => {
 
-</head>
+let b = document.createElement("button")
 
-<body>
+b.innerHTML = m.name + "<br>" + m.price + "đ"
 
-<h2>Trang gọi món</h2>
+b.onclick = () => addFood(m)
 
-<h3 id="currentTable">Chưa chọn bàn</h3>
+div.appendChild(b)
 
-<a href="menu.html">Quản lý menu</a> |
-<a href="kitchen.html">Bếp</a> |
-<a href="history.html">Lịch sử</a>
+})
 
-<hr>
+}
 
-<!-- CHỌN BÀN -->
+/* =========================
+   BÀN
+========================= */
 
-<div class="section-header" onclick="toggleTables()">
-Chọn bàn ▼
+function drawTables(){
+
+let div = document.getElementById("tables")
+div.innerHTML = ""
+
+for(let i=1;i<=20;i++){
+
+let b = document.createElement("button")
+
+b.innerText = "Bàn " + i
+
+if(currentTable === i){
+b.style.background = "#27ae60"
+b.style.color = "white"
+}
+
+b.onclick = () => openTable(i)
+
+div.appendChild(b)
+
+}
+
+}
+
+/* =========================
+   CHỌN BÀN
+========================= */
+
+function openTable(n){
+
+currentTable = n
+
+if(!tables[n]) tables[n] = []
+
+document.getElementById("currentTable").innerHTML =
+"Đang phục vụ: <b>Bàn " + n + "</b>"
+
+drawBill()
+drawTables()
+
+}
+
+/* =========================
+   THÊM MÓN
+========================= */
+
+function addFood(food){
+
+if(currentTable === null){
+alert("Vui lòng chọn bàn trước")
+return
+}
+
+tables[currentTable].push(food)
+
+Storage.saveTables(tables)
+
+drawBill()
+
+}
+
+/* =========================
+   HÓA ĐƠN
+========================= */
+
+function drawBill(){
+
+if(currentTable === null){
+document.getElementById("bill").innerHTML = "Chưa chọn bàn"
+return
+}
+
+let table = tables[currentTable]
+
+let html = ""
+let total = 0
+
+table.forEach((f,i)=>{
+
+total += f.price
+
+html += `
+<div>
+${f.name} - ${f.price}đ
+<button onclick="removeFood(${i})">❌</button>
 </div>
+`
 
-<div id="tablesSection" class="section-content">
-<div id="tables"></div>
-</div>
+})
 
-<!-- MENU -->
+html += "<hr><b>Tổng: " + total + "đ</b>"
 
-<div class="section-header" onclick="toggleMenu()">
-Menu ▼
-</div>
-
-<div id="menuSection" class="section-content">
-
-<input id="search" placeholder="Tìm món">
-
-<div id="categories"></div>
-
-<div id="menu"></div>
-
-</div>
-
-<h3>Hóa đơn</h3>
-
-<div id="bill"></div>
-
-<button id="sendKitchenBtn" onclick="sendKitchen()">
-Gửi bếp
-</button>
-
-<script src="js/data.js"></script>
-<script src="js/order.js"></script>
-
-<script>
-
-/* BẬT TẮT CHỌN BÀN */
-
-function toggleTables(){
-
-let div = document.getElementById("tablesSection")
-
-div.classList.toggle("hidden")
+document.getElementById("bill").innerHTML = html
 
 }
 
-/* BẬT TẮT MENU */
+/* =========================
+   XÓA MÓN
+========================= */
 
-function toggleMenu(){
+function removeFood(i){
 
-let div = document.getElementById("menuSection")
+tables[currentTable].splice(i,1)
 
-div.classList.toggle("hidden")
+Storage.saveTables(tables)
+
+drawBill()
 
 }
 
-</script>
+/* =========================
+   GỬI BẾP (SERVER)
+========================= */
 
-</body>
-</html>
+function sendKitchen(){
+
+if(currentTable === null){
+alert("Chưa chọn bàn")
+return
+}
+
+let order = {
+table: currentTable,
+foods: tables[currentTable]
+}
+
+fetch(API + "/send",{
+method:"POST",
+headers:{'Content-Type':'application/json'},
+body:JSON.stringify(order)
+})
+
+alert("Đã gửi bếp")
+
+tables[currentTable] = []
+
+Storage.saveTables(tables)
+
+drawBill()
+
+}
+
+/* ========================= */
+
+document.getElementById("search").oninput = drawMenu
+
+drawTables()
+drawCategories()
+drawMenu()
