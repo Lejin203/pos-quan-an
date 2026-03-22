@@ -1,36 +1,53 @@
-<!DOCTYPE html>
-<html>
-<head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Bếp</title>
-<link rel="stylesheet" href="css/style.css">
-</head>
+// 🔥 LINK SERVER
+const API = "https://pos-quan-an.onrender.com"
 
-<body>
+function loadKitchen(){
 
-<h2>Màn hình bếp</h2>
+fetch(API + "/orders")
+.then(r=>r.json())
+.then(data=>{
 
-<a href="order.html">Gọi món</a>
+let div = document.getElementById("orders")
+div.innerHTML = ""
 
-<hr>
+data.forEach(o=>{
 
-<div id="orders"></div>
+let html = "<div>"
 
-<script src="js/data.js"></script>
-<script src="js/kitchen.js"></script>
+html += "<h3>Bàn " + o.table + "</h3>"
+html += "<small>" + o.time + "</small><br>"
 
-<script>
+o.foods.forEach(f=>{
+html += f.name + " x" + f.qty + "<br>"
+})
 
-/* AUTO REFRESH ĐỂ NHẬN ĐƠN */
+html += `
+<button onclick="doneOrder(${o.id})">
+✅ Xong
+</button>
+`
 
-setInterval(()=>{
+html += "</div>"
 
-drawOrders()
+div.innerHTML += html
 
-},2000)
+})
 
-</script>
+})
 
-</body>
-</html>
+}
+
+function doneOrder(id){
+
+fetch(API + "/done",{
+method:"POST",
+headers:{'Content-Type':'application/json'},
+body:JSON.stringify({id})
+})
+
+}
+
+// 🔥 realtime
+setInterval(loadKitchen,1000)
+
+loadKitchen()
