@@ -1,0 +1,106 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Gọi món</title>
+<link rel="stylesheet" href="css/style.css">
+
+<style>
+
+.section-header{
+background:#34495e;
+color:white;
+padding:10px;
+border-radius:8px;
+cursor:pointer;
+margin-top:10px;
+}
+
+.section-content{
+margin-top:10px;
+}
+
+.hidden{
+display:none;
+}
+
+</style>
+
+</head>
+
+<body>
+
+<h2>Trang gọi món</h2>
+
+<h3 id="currentTable">Chưa chọn bàn</h3>
+
+<a href="menu.html">Quản lý menu</a> |
+<a href="kitchen.html">Bếp</a> |
+<a href="history.html">Lịch sử</a>
+
+<hr>
+
+<!-- CHỌN BÀN -->
+
+<div class="section-header" onclick="toggleTables()">
+Chọn bàn ▼
+</div>
+
+<div id="tablesSection" class="section-content">
+<div id="tables"></div>
+</div>
+
+<!-- MENU -->
+
+<div class="section-header" onclick="toggleMenu()">
+Menu ▼
+</div>
+
+<div id="menuSection" class="section-content">
+
+<input id="search" placeholder="Tìm món">
+
+<div id="categories"></div>
+
+<div id="menu"></div>
+
+</div>
+
+<h3>Hóa đơn</h3>
+
+<div id="bill"></div>
+
+<button id="sendKitchenBtn" onclick="sendKitchen()">
+Gửi bếp
+</button>
+
+<script src="js/data.js"></script>
+<script src="js/order.js"></script>
+
+<script>
+
+/* BẬT TẮT CHỌN BÀN */
+
+function toggleTables(){
+
+let div = document.getElementById("tablesSection")
+
+div.classList.toggle("hidden")
+
+}
+
+/* BẬT TẮT MENU */
+
+function toggleMenu(){
+
+let div = document.getElementById("menuSection")
+
+div.classList.toggle("hidden")
+
+}
+
+</script>
+
+</body>
+</html>
